@@ -147,6 +147,7 @@ services:
 volumes:
   ollama_data:
     name: triage_ollama_data
+    external: true
   postgres_data:
     name: triage_postgres_data
   neo4j_data:
