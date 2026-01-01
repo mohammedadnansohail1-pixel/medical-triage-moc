@@ -1,0 +1,75 @@
+{
+  "metrics": {
+    "total_cases": 22,
+    "specialty_accuracy": 0.8636363636363636,
+    "urgency_accuracy": 0.7272727272727273,
+    "emergency_sensitivity": 0.7142857142857143,
+    "avg_latency_ms": 2306.1243187297473,
+    "avg_confidence": 0.7654545454545455
+  },
+  "per_specialty": {
+    "neurology": 0.75,
+    "emergency": 1.0,
+    "dermatology": 1.0,
+    "pulmonology": 0.6666666666666666,
+    "gastroenterology": 1.0,
+    "general_medicine": 1.0,
+    "cardiology": 1.0,
+    "orthopedics": 0.6666666666666666
+  },
+  "per_category": {
+    "rash": 1.0,
+    "appendicitis": 1.0,
+    "viral_illness": 1.0,
+    "arrhythmia": 1.0,
+    "angina": 1.0,
+    "gerd": 1.0,
+    "cellulitis": 1.0,
+    "migraine": 0.0,
+    "stroke": 1.0,
+    "anaphylaxis": 1.0,
+    "knee_injury": 1.0,
+    "back_pain": 1.0,
+    "cardiac_emergency": 1.0,
+    "syncope_head_injury": 1.0,
+    "arthritis": 0.0,
+    "asthma": 0.0,
+    "gastroenteritis": 1.0,
+    "possible_sah": 1.0,
+    "pneumonia": 1.0,
+    "fatigue": 1.0,
+    "seizure": 1.0,
+    "chronic_cough": 1.0
+  },
+  "confusion_matrix": {
+    "cardiology": {
+      "emergency": 1,
+      "cardiology": 2
+    },
+    "pulmonology": {
+      "pulmonology": 2,
+      "error": 1
+    },
+    "neurology": {
+      "neurology": 2,
+      "gastroenterology": 1,
+      "emergency": 1
+    },
+    "gastroenterology": {
+      "gastroenterology": 3
+    },
+    "orthopedics": {
+      "orthopedics": 2,
+      "error": 1
+    },
+    "dermatology": {
+      "dermatology": 2
+    },
+    "emergency": {
+      "emergency": 2
+    },
+    "general_medicine": {
+      "general_medicine": 2
+    }
+  }
+}
