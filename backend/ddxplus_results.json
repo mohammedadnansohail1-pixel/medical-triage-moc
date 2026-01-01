@@ -1,0 +1,38 @@
+{
+  "total": 100,
+  "correct": 58,
+  "correct_top2": 61,
+  "errors": 0,
+  "accuracy": 0.58,
+  "by_specialty": {
+    "gastroenterology": {
+      "total": 9,
+      "correct": 0
+    },
+    "pulmonology": {
+      "total": 37,
+      "correct": 33
+    },
+    "general_medicine": {
+      "total": 28,
+      "correct": 8
+    },
+    "neurology": {
+      "total": 9,
+      "correct": 3
+    },
+    "emergency": {
+      "total": 3,
+      "correct": 3
+    },
+    "cardiology": {
+      "total": 11,
+      "correct": 11
+    },
+    "dermatology": {
+      "total": 3,
+      "correct": 0
+    }
+  },
+  "misclassified_count": 42
+}
