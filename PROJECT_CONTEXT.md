@@ -6,19 +6,22 @@
 ## Completed Work
 - [x] System requirements verified (i9-13900HX, 24GB RAM, RTX 4080 12GB)
 - [x] Git repository initialized
-- [x] Project structure planned
+- [x] GitHub private repo created and pushed
+- [x] Repo: https://github.com/mohammedadnansohail1-pixel/medical-triage-moc
 
 ## Next Steps
-1. [ ] Create GitHub private repo and push
-2. [ ] Set up Docker Compose with all services
-3. [ ] Create backend skeleton (FastAPI)
-4. [ ] Set up Ollama with Mistral-7B
-5. [ ] Create entity extractor module
+1. [x] Create GitHub private repo and push ✅
+2. [ ] Create project folder structure
+3. [ ] Set up Docker Compose with all services
+4. [ ] Create backend skeleton (FastAPI)
+5. [ ] Set up Ollama with Mistral-7B
+6. [ ] Create entity extractor module
 
 ## Decisions Made
 - **LLM Strategy**: Local first (Ollama + Mistral-7B), abstracted interface for cloud fallback
 - **Architecture**: Portable Docker Compose, all config via environment variables
 - **Resource Limits**: ~3GB RAM when running, 0 when stopped
+- **Git Protocol**: HTTPS (matches gh auth config)
 
 ## Key Files
 - `docker-compose.yml` - All services
@@ -36,6 +39,12 @@
 | Knowledge Graph | Neo4j |
 | Database | PostgreSQL |
 | Cache | Redis |
+
+## Machine Specs
+- CPU: i9-13900HX (16 cores)
+- RAM: 24GB
+- GPU: RTX 4080 Laptop (12GB VRAM)
+- OS: Ubuntu 24.04 (WSL2)
 
 ## How to Resume
 1. Read this file
