@@ -1,9 +1,21 @@
 # Medical Triage System - Project Context
 
-## Current Phase: Phase 5 COMPLETE
+## Current Phase: PRODUCTION READY ✅
 
 ## Project Overview
 Two-tier AI medical triage system with LLM-powered explanations.
+
+## Final Metrics
+
+| Metric | Value |
+|--------|-------|
+| DDXPlus Accuracy | 99.90% |
+| Natural Language Accuracy | 100% (5/5) |
+| Emergency Detection | 100% |
+| Test Suite | 51/51 passed |
+| API Latency (no LLM) | <100ms |
+| API Latency (with LLM) | ~1.3s |
+| Docker Image Size | 4.55GB |
 
 ## Architecture
 ```
@@ -11,141 +23,113 @@ User Input (symptoms, age, sex)
          ↓
 ┌─────────────────────────────────────┐
 │ Stage 1: Symptom Normalization      │ → Expand synonyms
-│ Stage 2: Entity Linking (SapBERT)   │ → Match to SNOMED codes
-│ Stage 3: Vectorization              │ → Binary symptom vectors
-│ Stage 4: Specialty Routing          │ → Tier 1 classification
-│ Stage 5: Differential Diagnosis     │ → Tier 2 within specialty
-│ Stage 6: LLM Explanation            │ → Mistral 7B via Ollama
+│ Stage 2: Emergency Detection        │ → Rule-based (100% reliable)
+│ Stage 2.5: Specialty Rules          │ → Dermatology/Gastro override
+│ Stage 3: SapBERT Entity Linking     │ → Match to SNOMED codes
+│ Stage 4: XGBoost Classification     │ → 7-class specialty routing
+│ Stage 5: Differential Diagnosis     │ → Bayesian within specialty
+│ Stage 6: LLM Explanation            │ → llama3.1:8b via Ollama
 └─────────────────────────────────────┘
          ↓
-Response: specialty, confidence, DDx[], explanation
+Response: specialty, confidence, DDx[], explanation, route
 ```
 
-## Completed Phases
-
-### Phase 1: Data Pipeline ✓
-- DDXPlus dataset integration (1.3M cases, 49 conditions)
-- Evidence/symptom extraction and normalization
-
-### Phase 2: Specialty Routing (Tier 1) ✓
-- 6 specialties: emergency, cardiology, pulmonology, neurology, gastroenterology, general_medicine
-- 90% accuracy on DDXPlus validation set
-- Emergency override for critical symptom combinations
-
-### Phase 3: Symptom Understanding ✓
-- SapBERT entity linking (cambridgeltl/SapBERT-from-PubMedBERT-fulltext)
-- Cosine similarity matching to SNOMED codes
-- Synonym expansion for robust matching
-
-### Phase 4: Differential Diagnosis (Tier 2) ✓
-- Specialty-specific classifiers
-- 95% Top-1 accuracy, 99.8% Top-3 accuracy
-- Bayesian probability estimation
-
-### Phase 5: LLM Explanation Layer ✓
-- Ollama + Mistral 7B (4GB VRAM)
-- Patient-friendly explanations
-- Urgency classification (emergency/urgent/routine)
-- Fallback mechanism for reliability
-- ~1.2s generation time
+## Routes
+- `EMERGENCY_OVERRIDE` - Rule-based emergency (100% confidence)
+- `RULE_OVERRIDE` - Keyword-based specialty (dermatology, gastro)
+- `ML_CLASSIFICATION` - XGBoost prediction
+- `DEFAULT_FALLBACK` - No codes matched
 
 ## Key Files
 ```
-backend/
-├── app/
-│   ├── main.py                      # FastAPI application
-│   ├── api/
-│   │   └── triage.py                # POST /api/v1/triage endpoint
-│   └── core/
-│       ├── triage_pipeline_v2.py    # Main pipeline orchestrator
-│       ├── symptom_linker.py        # SapBERT entity linking
-│       ├── specialty_router.py      # Tier 1 routing
-│       ├── differential_agent.py    # Tier 2 DDx
-│       └── explanation_generator.py # LLM explanations
-├── tests/
-│   ├── test_symptom_linker.py
-│   ├── test_triage_pipeline.py
-│   └── test_explanation_generator.py
-└── data/
-    ├── ddxplus/
-    │   ├── release_evidences.json
-    │   └── condition_model.json
-    └── classifier/
-        ├── model.pkl
-        └── vocabulary.pkl
+medical-triage-moc/
+├── backend/
+│   ├── app/
+│   │   ├── main.py                      # FastAPI app
+│   │   ├── api/triage.py                # POST /api/v1/triage
+│   │   └── core/
+│   │       ├── triage_pipeline_v2.py    # Main orchestrator
+│   │       ├── emergency_detector.py    # Rule-based safety
+│   │       ├── symptom_normalizer.py    # Text preprocessing
+│   │       ├── sapbert_linker.py        # Medical NER
+│   │       ├── specialty_agent.py       # DDx generation
+│   │       └── explanation_generator.py # LLM (llama3.1:8b)
+│   ├── tests/
+│   │   └── test_api_comprehensive.py    # 51 tests
+│   ├── data/classifier/
+│   │   ├── model.pkl                    # XGBoost (99.9%)
+│   │   └── vocabulary.pkl               # 223 codes, 7 specialties
+│   ├── Dockerfile
+│   └── requirements.txt
+├── data/ddxplus/
+│   ├── release_evidences.json
+│   └── condition_model.json             # Includes dermatology
+├── docker-compose.yml                   # GPU + Ollama
+├── docker-compose.cpu.yml               # CPU only
+└── docs/
+    ├── METRICS_ANALYSIS.md
+    └── TECHNICAL_ARCHITECTURE.md
 ```
 
-## Hardware Requirements
-- GPU: NVIDIA RTX 4080 12GB (or equivalent)
-- VRAM Usage: ~5.5GB (SapBERT 0.5GB + Mistral 4GB + overhead)
-- Ollama running on localhost:11434
+## Commands
+```bash
+# Local development
+cd backend
+source venv/bin/activate
+uvicorn app.main:app --reload --port 8000
+
+# Run tests
+pytest tests/test_api_comprehensive.py -v
+
+# Docker (CPU only, no LLM)
+docker-compose -f docker-compose.cpu.yml up -d
+
+# Docker (GPU + Ollama)
+docker-compose up -d
+
+# Build image
+docker build -t medical-triage-api:latest -f backend/Dockerfile backend/
+```
 
 ## API Usage
 ```bash
-# Start Ollama
-ollama serve &
+# Health check
+curl http://localhost:8000/api/v1/health
 
-# Start API
-cd backend && uvicorn app.main:app --port 8000
-
-# Request
+# Triage request
 curl -X POST http://localhost:8000/api/v1/triage \
   -H "Content-Type: application/json" \
   -d '{
-    "symptoms": ["chest pain", "shortness of breath"],
-    "age": 55,
-    "sex": "male"
+    "symptoms": ["cough", "fever"],
+    "age": 35,
+    "sex": "male",
+    "include_explanation": true
   }'
 ```
 
-## Response Format
-```json
-{
-  "specialty": "emergency",
-  "confidence": 1.0,
-  "differential_diagnosis": [
-    {"condition": "Unstable angina", "probability": 0.85, "rank": 1}
-  ],
-  "explanation": {
-    "text": "Patient-friendly explanation...",
-    "urgency": "emergency",
-    "next_steps": ["Call 911", "..."]
-  },
-  "route": "EMERGENCY_OVERRIDE"
-}
-```
-
-## Performance Metrics
-| Metric | Value |
-|--------|-------|
-| Specialty Routing Accuracy | 90% |
-| DDx Top-1 Accuracy | 95% |
-| DDx Top-3 Accuracy | 99.8% |
-| Explanation Generation | ~1.2s |
-| Total Pipeline Latency | ~3-4s |
-
-## Next Steps (Phase 6 Options)
-1. **Frontend UI** - React/Next.js symptom input interface
-2. **Conversation Agent** - Multi-turn symptom collection
-3. **Evaluation Dashboard** - Metrics and A/B testing
-4. **Production Hardening** - Docker, logging, monitoring
+## Completed Work
+- [x] Phase 1: Data Pipeline (DDXPlus integration)
+- [x] Phase 2: Specialty Routing (XGBoost 99.9%)
+- [x] Phase 3: Symptom Understanding (SapBERT)
+- [x] Phase 4: Differential Diagnosis (Bayesian)
+- [x] Phase 5: LLM Explanations (llama3.1:8b)
+- [x] Phase 6: Testing (51 tests) + Docker
 
 ## Decisions Made
-- Ollama over vLLM: Simpler setup, sufficient performance
-- Mistral 7B over larger models: Fits in VRAM with SapBERT
-- JSON format enforcement: `format: "json"` in Ollama API
-- Fallback explanations: Ensure reliability when LLM fails
-- Emergency override: Bypass DDx for critical symptoms
+- XGBoost over ClinicalBERT: Better accuracy/latency tradeoff
+- Rule-based emergency: 100% reliable, no ML uncertainty
+- Specialty rules: Fix DDXPlus data gaps (dermatology)
+- llama3.1:8b over mistral:7b: Available locally
+- Docker CPU-only option: For deployments without GPU
 
-## Commands Reference
-```bash
-# Test pipeline
-cd ~/projects/medical-triage-moc/backend
-python -c "from app.core.triage_pipeline_v2 import get_triage_pipeline; ..."
+## Known Limitations
+1. DDXPlus has no real dermatology conditions (rule-based fallback)
+2. 49 conditions only (synthetic dataset)
+3. English only
+4. No image analysis
 
-# Run tests
-pytest tests/ -v
-
-# Start API
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
+## Future Improvements
+1. Frontend UI (React/Next.js)
+2. Multi-turn conversation agent
+3. Real clinical data training
+4. Multi-language support
