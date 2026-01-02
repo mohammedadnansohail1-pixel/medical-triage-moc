@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.triage import router as triage_router
 from app.api.image_triage import router as image_triage_router
+from app.api.conversation import router as conversation_router
 
 app = FastAPI(
     title="Medical Triage API",
@@ -25,6 +26,7 @@ app.add_middleware(
 # Register routers
 app.include_router(triage_router)
 app.include_router(image_triage_router)
+app.include_router(conversation_router)
 
 
 @app.get("/")
@@ -37,5 +39,6 @@ async def root():
             "triage": "/api/v1/triage",
             "image_triage": "/api/v1/triage/image",
             "health": "/api/v1/health",
+            "conversation": "/api/v1/conversation",
         },
     }
