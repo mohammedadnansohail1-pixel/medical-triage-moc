@@ -1,149 +1,178 @@
-# PROJECT CONTEXT - Medical Triage MOC
+# Medical Triage MOC - Project Context
 
-## Current Phase: Hybrid Ensemble Improvement (Step 3 of 5)
+## Current Phase: 3 (Complete)
 
-## Problem Statement
-- Classifier trained on DDXPlus evidence codes: **100% accuracy**
-- Full API with text input: **~50% accuracy**
-- Root cause: Information loss when converting text → evidence codes
-
-## Research Findings (5+ sources)
-
-| Source | Approach | Accuracy | Works on Natural Text? |
-|--------|----------|----------|------------------------|
-| arXiv 2408.15827 | DDXPlus → text templates → transformer | 97% F1 | ✅ Yes |
-| PMC5709846 | Clinical notes → subdomain classifier | 90%+ | ✅ Yes |
-| PMC9862953 | Hybrid (BERT+LSTM+CNN+TF-IDF) | 93.5% | ✅ Yes |
-| Nature 2024 | MCN-BERT on symptom descriptions | 99.58% | ✅ Yes |
-| Our current | XGBoost on evidence codes | 100% | ❌ No |
-
-**Key Insight from arXiv 2408.15827:**
-> "short sentence templates that act as a response to each of the 223 unique questions... 
-> written in first person... construct a block of text (patient report) that portrays 
-> a patient reporting their own symptoms"
-
-## Approved Plan
-
-| Step | Task | Status | Time |
-|------|------|--------|------|
-| 1 | Parse release_evidences.json → build text templates | ⬜ Pending | 30 min |
-| 2 | Convert DDXPlus evidence codes → natural language | ⬜ Pending | 30 min |
-| 3 | Train text classifier (TF-IDF + XGBoost) | ⬜ Pending | 30 min |
-| 4 | Update ensemble to use text classifier | ⬜ Pending | 15 min |
-| 5 | Evaluate on DDXPlus via text API | ⬜ Pending | 15 min |
-
-**Expected Result:** 80-90% accuracy on natural language input
-
-## Completed Work
-
-### Phase 1-2: Core System ✅
-- FastAPI backend
-- Entity Extractor (20 symptoms, negation, duration, severity)
-- Knowledge Graph (Neo4j: 8 specialties, 20 symptoms, 19 diseases)
-- LLM Router (llama3.1:8b)
-- Rule-based emergency detection
-- Ensemble combiner
-
-### Phase 3: Evaluation ✅
-- DDXPlus benchmark integration
-- Curated test cases (22 cases, 86.4% accuracy)
-- Evidence-code classifier (100% on DDXPlus)
-
-### Hybrid Ensemble (Partial) ✅
-- XGBoost classifier trained on 50k DDXPlus samples
-- Classifier achieves 100% on evidence codes
-- Ensemble weights: Classifier 40% + LLM 40% + KG 20%
-
-## Current Evaluation Results
-
-### Classifier-Only (Evidence Codes)
-```
-Accuracy: 100% (998/998)
-- cardiology:        100% (137/137)
-- dermatology:       100% (26/26)
-- emergency:         100% (55/55)
-- gastroenterology:  100% (74/74)
-- general_medicine:  100% (297/297)
-- neurology:         100% (97/97)
-- pulmonology:       100% (312/312)
-```
-
-### Full API (Text Input) - BEFORE FIX
-```
-Accuracy: ~50%
-Problem: Text → evidence code mapping loses information
-```
+## Project Overview
+AI-powered medical triage routing system that maps patient symptoms to appropriate medical specialties.
 
 ## Architecture
 ```
-Patient Text Input
-       │
-       ▼
-┌──────────────────┐
-│ Entity Extractor │
-└────────┬─────────┘
-         │
-         ▼
-   ┌─────┴─────┬────────────┐
-   │           │            │
-   ▼           ▼            ▼
-┌──────┐  ┌────────┐  ┌──────────┐
-│  KG  │  │  Text  │  │   LLM    │
-│Router│  │Classif.│  │  Router  │
-│(20%) │  │ (40%)  │  │  (40%)   │
-└──┬───┘  └───┬────┘  └────┬─────┘
-   │          │            │
-   └────┬─────┴────────────┘
-        │
-        ▼
-┌───────────────────┐
-│ Weighted Ensemble │
-└────────┬──────────┘
-         │
-         ▼
-    Final Specialty
+Patient text
+    ↓
+┌─────────────────────────────────────┐
+│ Stage 0: Emergency Detection        │
+│ Rule-based regex patterns           │
+│ 100% reliable, always runs first    │
+└─────────────────────────────────────┘
+    ↓ (if not emergency)
+┌─────────────────────────────────────┐
+│ Stage 1: SapBERT Entity Linking     │
+│ Patient language → Evidence codes   │
+│ Model: cambridgeltl/SapBERT-from-PubMedBERT-fulltext │
+│ VRAM: 0.42 GB                       │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ Stage 2: XGBoost Classification     │
+│ Evidence codes → Specialty          │
+│ 225 features, 7 classes             │
+│ Trained on DDXPlus dataset          │
+└─────────────────────────────────────┘
+    ↓
+Specialty routing (7 specialties)
 ```
 
-## Key Files
+## Completed Work
 
-### Classifier (Current - Evidence-based)
-- `backend/app/core/classifier/prepare_data.py` - Data preparation
-- `backend/app/core/classifier/train.py` - XGBoost training
-- `backend/app/core/classifier/router.py` - Routing module
-- `data/classifier/model.pkl` - Trained model
-- `data/classifier/vocabulary.pkl` - Evidence code vocab
+### Phase 1: Foundation
+- Project structure with FastAPI backend
+- Entity extraction (symptoms, negations, duration, severity)
+- Neo4j knowledge graph integration
+- Docker compose setup
 
-### Evaluation
-- `backend/evaluation/ddxplus_eval.py` - DDXPlus benchmark
-- `backend/evaluation/runner.py` - Curated test runner
-- `backend/evaluation/test_cases.py` - 22 curated cases
+### Phase 2: Evaluation Framework
+- 22 curated test cases across specialties
+- DDXPlus benchmark integration (50K train, 5K test)
+- XGBoost classifier: 99.9% on evidence codes
+- LLM routing: 58% on patient text
+- Ensemble combiner (KG + LLM + Rules)
 
-### Core System
-- `backend/app/core/ensemble.py` - Ensemble router
-- `backend/app/core/entity_extractor.py` - Symptom extraction
-- `backend/app/core/knowledge_graph.py` - Neo4j router
-- `backend/app/core/llm_router.py` - Ollama LLM router
+### Phase 3: SapBERT Pipeline
+- SapBERT entity linker for patient language → evidence codes
+- Emergency detector with rule-based override
+- Triage Pipeline v2 integrating all components
+- API endpoint: POST /api/triage/v2
+- **Results: 79.4% accuracy (+21% over LLM baseline)**
 
-## How to Run
+## Current Metrics
+
+### Overall Accuracy: 79.4% (500 samples)
+
+| Specialty | Accuracy | Notes |
+|-----------|----------|-------|
+| neurology | 100% | Excellent |
+| dermatology | 100% | Small sample (14) |
+| cardiology | 93% | Excellent |
+| pulmonology | 86.8% | Good |
+| emergency | 84% | Needs improvement |
+| general_medicine | 64.1% | Catch-all confusion |
+| gastroenterology | 53.7% | Poor - overlapping symptoms |
+
+### Resource Usage
+- VRAM: 0.42 GB (vs 8GB for LLM)
+- Latency: ~100ms (vs ~2s for LLM)
+
+## Known Issues
+
+1. **Gastroenterology confusion (53.7%)**: Overlapping symptoms with general_medicine (nausea, stomach pain)
+2. **General_medicine catch-all (64.1%)**: Too many cases routed here incorrectly
+3. **DDXPlus data missing**: Only have release_evidences.json, patient files download failed
+
+## File Structure
+```
+~/projects/medical-triage-moc/
+├── backend/
+│   ├── app/
+│   │   ├── api/routes/
+│   │   │   ├── triage.py        # V1 endpoint (LLM)
+│   │   │   └── triage_v2.py     # V2 endpoint (SapBERT)
+│   │   ├── core/
+│   │   │   ├── sapbert_linker.py
+│   │   │   ├── emergency_detector.py
+│   │   │   ├── triage_pipeline_v2.py
+│   │   │   ├── clinical_bert_classifier.py  # Future use
+│   │   │   ├── train_clinical_bert.py       # Future use
+│   │   │   ├── entity_extractor.py
+│   │   │   ├── ensemble.py
+│   │   │   └── classifier/
+│   │   │       ├── train.py
+│   │   │       └── model.py
+│   │   └── main.py
+│   ├── data/classifier/
+│   │   ├── model.pkl           # XGBoost model
+│   │   ├── vocabulary.pkl      # Code/specialty mappings
+│   │   ├── train_data.pkl      # 50K training samples
+│   │   └── test_data.pkl       # 5K test samples
+│   └── evaluation/
+│       ├── test_cases.py       # 22 curated cases
+│       └── runner.py
+├── data/ddxplus/
+│   └── release_evidences.json  # 223 evidence definitions
+└── docker-compose.yml
+```
+
+## API Endpoints
+
+### V2 (Current - SapBERT)
 ```bash
-# Start services
-cd ~/projects/medical-triage-moc
-docker compose up -d neo4j ollama
+# Health check
+GET /api/triage/v2/health
 
-# Start backend
-cd backend && source venv/bin/activate
-PYTHONPATH=. uvicorn app.main:app --reload
+# Triage request
+POST /api/triage/v2
+{
+  "symptoms": ["chest pain", "difficulty breathing"],
+  "age": 55,
+  "sex": "male"
+}
 
-# Run evaluation
-PYTHONPATH=. python -m evaluation.ddxplus_eval
+# Response
+{
+  "specialty": "emergency",
+  "confidence": 1.0,
+  "urgency": "emergency",
+  "matched_codes": [],
+  "reasoning": ["Emergency detected: cardiac_emergency"],
+  "route": "EMERGENCY_OVERRIDE",
+  "is_emergency": true,
+  "emergency_reason": "cardiac_emergency"
+}
 ```
 
 ## Next Steps
-1. Build text templates from release_evidences.json
-2. Generate natural language training data from DDXPlus
-3. Train TF-IDF + XGBoost on text
-4. Integrate text classifier into ensemble
-5. Re-evaluate on DDXPlus
 
-## Git Repository
-https://github.com/mohammedadnansohail1-pixel/medical-triage-moc
+### Immediate: Improve Accuracy
+- Analyze gastro vs general_medicine confusion matrix
+- Tune SapBERT similarity threshold
+- Consider class weights in XGBoost retraining
+- NO hardcoding or overfitting to test set
+
+### Future: Phase 4
+- Specialty-specific agents
+- Follow-up question generation
+- Diagnosis refinement within specialty
+
+## Commands
+```bash
+# Activate environment
+cd ~/projects/medical-triage-moc/backend
+source venv/bin/activate
+
+# Run API
+PYTHONPATH=. uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# Run pipeline test
+PYTHONPATH=. python << 'EOF'
+from pathlib import Path
+from app.core.triage_pipeline_v2 import get_triage_pipeline
+
+pipeline = get_triage_pipeline()
+pipeline.load(
+    Path("/home/adnan21/projects/medical-triage-moc/data/ddxplus/release_evidences.json"),
+    Path("data/classifier/model.pkl"),
+    Path("data/classifier/vocabulary.pkl"),
+)
+
+result = pipeline.predict(["chest pain", "shortness of breath"])
+print(result)
+pipeline.unload()
