@@ -1,0 +1,247 @@
+{
+  "Acute COPD exacerbation / infection": {
+    "condition_name": "Acute COPD exacerbation / infection",
+    "cond_name_eng": "Acute COPD exacerbation / infection",
+    "index": 0
+  },
+  "Acute dystonic reactions": {
+    "condition_name": "Acute dystonic reactions",
+    "cond_name_eng": "Acute dystonic reactions",
+    "index": 1
+  },
+  "Acute laryngitis": {
+    "condition_name": "Acute laryngitis",
+    "cond_name_eng": "Acute laryngitis",
+    "index": 2
+  },
+  "Acute otitis media": {
+    "condition_name": "Acute otitis media",
+    "cond_name_eng": "Acute otitis media",
+    "index": 3
+  },
+  "Acute pulmonary edema": {
+    "condition_name": "Acute pulmonary edema",
+    "cond_name_eng": "Acute pulmonary edema",
+    "index": 4
+  },
+  "Acute rhinosinusitis": {
+    "condition_name": "Acute rhinosinusitis",
+    "cond_name_eng": "Acute rhinosinusitis",
+    "index": 5
+  },
+  "Allergic sinusitis": {
+    "condition_name": "Allergic sinusitis",
+    "cond_name_eng": "Allergic sinusitis",
+    "index": 6
+  },
+  "Anaphylaxis": {
+    "condition_name": "Anaphylaxis",
+    "cond_name_eng": "Anaphylaxis",
+    "index": 7
+  },
+  "Anemia": {
+    "condition_name": "Anemia",
+    "cond_name_eng": "Anemia",
+    "index": 8
+  },
+  "Atrial fibrillation": {
+    "condition_name": "Atrial fibrillation",
+    "cond_name_eng": "Atrial fibrillation",
+    "index": 9
+  },
+  "Boerhaave": {
+    "condition_name": "Boerhaave",
+    "cond_name_eng": "Boerhaave",
+    "index": 10
+  },
+  "Bronchiectasis": {
+    "condition_name": "Bronchiectasis",
+    "cond_name_eng": "Bronchiectasis",
+    "index": 11
+  },
+  "Bronchiolitis": {
+    "condition_name": "Bronchiolitis",
+    "cond_name_eng": "Bronchiolitis",
+    "index": 12
+  },
+  "Bronchitis": {
+    "condition_name": "Bronchitis",
+    "cond_name_eng": "Bronchitis",
+    "index": 13
+  },
+  "Bronchospasm / acute asthma exacerbation": {
+    "condition_name": "Bronchospasm / acute asthma exacerbation",
+    "cond_name_eng": "Bronchospasm / acute asthma exacerbation",
+    "index": 14
+  },
+  "Chagas": {
+    "condition_name": "Chagas",
+    "cond_name_eng": "Chagas",
+    "index": 15
+  },
+  "Chronic rhinosinusitis": {
+    "condition_name": "Chronic rhinosinusitis",
+    "cond_name_eng": "Chronic rhinosinusitis",
+    "index": 16
+  },
+  "Cluster headache": {
+    "condition_name": "Cluster headache",
+    "cond_name_eng": "Cluster headache",
+    "index": 17
+  },
+  "Croup": {
+    "condition_name": "Croup",
+    "cond_name_eng": "Croup",
+    "index": 18
+  },
+  "Ebola": {
+    "condition_name": "Ebola",
+    "cond_name_eng": "Ebola",
+    "index": 19
+  },
+  "Epiglottitis": {
+    "condition_name": "Epiglottitis",
+    "cond_name_eng": "Epiglottitis",
+    "index": 20
+  },
+  "GERD": {
+    "condition_name": "GERD",
+    "cond_name_eng": "GERD",
+    "index": 21
+  },
+  "Guillain-Barr\u00e9 syndrome": {
+    "condition_name": "Guillain-Barr\u00e9 syndrome",
+    "cond_name_eng": "Guillain-Barr\u00e9 syndrome",
+    "index": 22
+  },
+  "HIV (initial infection)": {
+    "condition_name": "HIV (initial infection)",
+    "cond_name_eng": "HIV (initial infection)",
+    "index": 23
+  },
+  "Influenza": {
+    "condition_name": "Influenza",
+    "cond_name_eng": "Influenza",
+    "index": 24
+  },
+  "Inguinal hernia": {
+    "condition_name": "Inguinal hernia",
+    "cond_name_eng": "Inguinal hernia",
+    "index": 25
+  },
+  "Larygospasm": {
+    "condition_name": "Larygospasm",
+    "cond_name_eng": "Larygospasm",
+    "index": 26
+  },
+  "Localized edema": {
+    "condition_name": "Localized edema",
+    "cond_name_eng": "Localized edema",
+    "index": 27
+  },
+  "Myasthenia gravis": {
+    "condition_name": "Myasthenia gravis",
+    "cond_name_eng": "Myasthenia gravis",
+    "index": 28
+  },
+  "Myocarditis": {
+    "condition_name": "Myocarditis",
+    "cond_name_eng": "Myocarditis",
+    "index": 29
+  },
+  "PSVT": {
+    "condition_name": "PSVT",
+    "cond_name_eng": "PSVT",
+    "index": 30
+  },
+  "Pancreatic neoplasm": {
+    "condition_name": "Pancreatic neoplasm",
+    "cond_name_eng": "Pancreatic neoplasm",
+    "index": 31
+  },
+  "Panic attack": {
+    "condition_name": "Panic attack",
+    "cond_name_eng": "Panic attack",
+    "index": 32
+  },
+  "Pericarditis": {
+    "condition_name": "Pericarditis",
+    "cond_name_eng": "Pericarditis",
+    "index": 33
+  },
+  "Pneumonia": {
+    "condition_name": "Pneumonia",
+    "cond_name_eng": "Pneumonia",
+    "index": 34
+  },
+  "Possible NSTEMI / STEMI": {
+    "condition_name": "Possible NSTEMI / STEMI",
+    "cond_name_eng": "Possible NSTEMI / STEMI",
+    "index": 35
+  },
+  "Pulmonary embolism": {
+    "condition_name": "Pulmonary embolism",
+    "cond_name_eng": "Pulmonary embolism",
+    "index": 36
+  },
+  "Pulmonary neoplasm": {
+    "condition_name": "Pulmonary neoplasm",
+    "cond_name_eng": "Pulmonary neoplasm",
+    "index": 37
+  },
+  "SLE": {
+    "condition_name": "SLE",
+    "cond_name_eng": "SLE",
+    "index": 38
+  },
+  "Sarcoidosis": {
+    "condition_name": "Sarcoidosis",
+    "cond_name_eng": "Sarcoidosis",
+    "index": 39
+  },
+  "Scombroid food poisoning": {
+    "condition_name": "Scombroid food poisoning",
+    "cond_name_eng": "Scombroid food poisoning",
+    "index": 40
+  },
+  "Spontaneous pneumothorax": {
+    "condition_name": "Spontaneous pneumothorax",
+    "cond_name_eng": "Spontaneous pneumothorax",
+    "index": 41
+  },
+  "Spontaneous rib fracture": {
+    "condition_name": "Spontaneous rib fracture",
+    "cond_name_eng": "Spontaneous rib fracture",
+    "index": 42
+  },
+  "Stable angina": {
+    "condition_name": "Stable angina",
+    "cond_name_eng": "Stable angina",
+    "index": 43
+  },
+  "Tuberculosis": {
+    "condition_name": "Tuberculosis",
+    "cond_name_eng": "Tuberculosis",
+    "index": 44
+  },
+  "URTI": {
+    "condition_name": "URTI",
+    "cond_name_eng": "URTI",
+    "index": 45
+  },
+  "Unstable angina": {
+    "condition_name": "Unstable angina",
+    "cond_name_eng": "Unstable angina",
+    "index": 46
+  },
+  "Viral pharyngitis": {
+    "condition_name": "Viral pharyngitis",
+    "cond_name_eng": "Viral pharyngitis",
+    "index": 47
+  },
+  "Whooping cough": {
+    "condition_name": "Whooping cough",
+    "cond_name_eng": "Whooping cough",
+    "index": 48
+  }
+}
