@@ -2,7 +2,10 @@
 Two-Stage Triage Pipeline:
 1. Emergency Rules: Check for safety-critical symptoms (100% reliable)
 2. SapBERT: Patient text → DDXPlus evidence codes
-3. XGBoost: Evidence codes → Specialty (99% accuracy)
+3. XGBoost: Evidence codes → Specialty
+
+IMPORTANT: Only rule-based emergency detection routes to emergency.
+ML predictions of "emergency" are downgraded to the next best specialty.
 """
 
 import pickle
@@ -39,28 +42,28 @@ class TriagePipelineV2:
 
         logger.info("pipeline_loading")
 
-        # Load SapBERT and build evidence index
         self.sapbert = get_sapbert_linker()
         self.sapbert.load()
         self.sapbert.build_evidence_index(evidences_path)
 
-        # Load XGBoost model
         with open(model_path, "rb") as f:
             self.xgboost_model = pickle.load(f)
 
-        # Load vocabulary
         with open(vocab_path, "rb") as f:
             vocab = pickle.load(f)
 
         self.code_to_idx = vocab["code_to_idx"]
         self.idx_to_specialty = vocab["idx_to_specialty"]
+        
+        # Find emergency index for filtering
+        self.emergency_idx = None
+        for idx, name in self.idx_to_specialty.items():
+            if name == "emergency":
+                self.emergency_idx = idx
+                break
 
         self._loaded = True
-        logger.info(
-            "pipeline_loaded",
-            num_evidence_codes=len(self.code_to_idx),
-            num_specialties=len(self.idx_to_specialty),
-        )
+        logger.info("pipeline_loaded", num_evidence_codes=len(self.code_to_idx), num_specialties=len(self.idx_to_specialty))
 
     def unload(self) -> None:
         """Free resources."""
@@ -83,11 +86,7 @@ class TriagePipelineV2:
                 features[idx] = 1.0
                 matched_codes.add(code)
 
-        logger.info(
-            "symptoms_vectorized",
-            input_symptoms=len(symptoms),
-            matched_codes=len(matched_codes),
-        )
+        logger.info("symptoms_vectorized", input_symptoms=len(symptoms), matched_codes=len(matched_codes))
 
         return features, matched_codes
 
@@ -139,16 +138,27 @@ class TriagePipelineV2:
         features_2d = features.reshape(1, -1)
         proba = self.xgboost_model.predict_proba(features_2d)[0]
 
+        # IMPORTANT: If ML predicts emergency but rules didn't, use 2nd best
+        # Only rule-based detection should route to emergency
         top_idx = np.argmax(proba)
+        
+        if top_idx == self.emergency_idx:
+            # Zero out emergency and get next best
+            proba_filtered = proba.copy()
+            proba_filtered[self.emergency_idx] = 0
+            top_idx = np.argmax(proba_filtered)
+            logger.info("ml_emergency_downgraded", original_conf=float(proba[self.emergency_idx]))
+
         specialty = self.idx_to_specialty[top_idx]
         confidence = float(proba[top_idx])
 
-        # Get top 3 for reasoning
+        # Get top 3 for reasoning (excluding emergency if it was filtered)
         top_3_idx = np.argsort(proba)[-3:][::-1]
         reasoning = [
             f"{self.idx_to_specialty[i]}: {proba[i]:.1%}"
             for i in top_3_idx
-        ]
+            if i != self.emergency_idx or emergency_result["is_emergency"]
+        ][:3]
 
         return {
             "specialty": specialty,
