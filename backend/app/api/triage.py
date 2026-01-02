@@ -4,6 +4,7 @@ Triage API Endpoint.
 POST /api/v1/triage - Process symptoms and return triage results with explanations.
 """
 
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -50,16 +51,38 @@ class TriageResponse(BaseModel):
 _pipeline: Optional[TriagePipelineV2] = None
 
 
+def get_data_paths():
+    """Get data paths - works in both local and Docker."""
+    # Check for Docker paths first
+    if Path("/app/data/ddxplus/release_evidences.json").exists():
+        base = Path("/app")
+    else:
+        # Local development
+        base = Path(__file__).parent.parent.parent.parent
+    
+    return {
+        "evidences": base / "data" / "ddxplus" / "release_evidences.json",
+        "model": Path(__file__).parent.parent.parent / "data" / "classifier" / "model.pkl",
+        "vocab": Path(__file__).parent.parent.parent / "data" / "classifier" / "vocabulary.pkl",
+    }
+
+
 def get_pipeline() -> TriagePipelineV2:
     """Get or initialize pipeline singleton."""
     global _pipeline
     if _pipeline is None:
+        paths = get_data_paths()
+        
         _pipeline = get_triage_pipeline()
+        
+        # Check if LLM is enabled
+        enable_llm = os.environ.get("ENABLE_LLM", "true").lower() == "true"
+        
         _pipeline.load(
-            evidences_path=Path("/home/adnan21/projects/medical-triage-moc/data/ddxplus/release_evidences.json"),
-            model_path=Path("data/classifier/model.pkl"),
-            vocab_path=Path("data/classifier/vocabulary.pkl"),
-            enable_explanations=True,
+            evidences_path=paths["evidences"],
+            model_path=paths["model"],
+            vocab_path=paths["vocab"],
+            enable_explanations=enable_llm,
         )
     return _pipeline
 
@@ -68,20 +91,20 @@ def get_pipeline() -> TriagePipelineV2:
 async def triage(request: TriageRequest) -> TriageResponse:
     """
     Process symptoms and return triage results.
-    
+
     Returns specialty routing, differential diagnosis, and optional
     LLM-generated explanation with urgency level.
     """
     try:
         pipeline = get_pipeline()
-        
+
         result = pipeline.predict(
             symptoms=request.symptoms,
             age=request.age,
             sex=request.sex,
             include_explanation=request.include_explanation,
         )
-        
+
         # Build response
         ddx = [
             DifferentialDiagnosis(
@@ -91,7 +114,7 @@ async def triage(request: TriageRequest) -> TriageResponse:
             )
             for i, d in enumerate(result.get("differential_diagnosis", []))
         ]
-        
+
         explanation = None
         if result.get("explanation"):
             exp = result["explanation"]
@@ -100,7 +123,7 @@ async def triage(request: TriageRequest) -> TriageResponse:
                 urgency=exp["urgency"],
                 next_steps=exp["next_steps"],
             )
-        
+
         return TriageResponse(
             specialty=result["specialty"],
             confidence=result["confidence"],
@@ -108,7 +131,7 @@ async def triage(request: TriageRequest) -> TriageResponse:
             explanation=explanation,
             route=result.get("route"),
         )
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

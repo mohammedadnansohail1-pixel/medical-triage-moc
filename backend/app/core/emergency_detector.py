@@ -111,11 +111,23 @@ def check_emergency_keywords(symptoms: List[str]) -> Dict:
 
 # Additional emergency combinations
 EMERGENCY_COMBOS = [
+    # Cardiac
     ({"chest", "arm"}, "cardiac_emergency"),  # MI classic
     ({"chest", "sweating"}, "cardiac_emergency"),
+    ({"chest pain", "shortness of breath"}, "cardiac_emergency"),
+    # Stroke
     ({"face", "droop"}, "stroke"),
     ({"weakness", "numbness"}, "stroke"),
     ({"sudden", "weakness"}, "stroke"),
+    # Anaphylaxis - MUST catch before dermatology rules
+    ({"breathing", "hives"}, "anaphylaxis"),
+    ({"breathing", "swelling"}, "anaphylaxis"),
+    ({"breath", "hives"}, "anaphylaxis"),
+    ({"breath", "swelling"}, "anaphylaxis"),
+    ({"difficulty breathing", "hives"}, "anaphylaxis"),
+    ({"difficulty breathing", "swelling"}, "anaphylaxis"),
+    ({"shortness of breath", "hives"}, "anaphylaxis"),
+    ({"shortness of breath", "swelling"}, "anaphylaxis"),
 ]
 
 def check_emergency_combos(symptoms: List[str]) -> Dict:
