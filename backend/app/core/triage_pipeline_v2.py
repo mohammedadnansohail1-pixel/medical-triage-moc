@@ -1,11 +1,9 @@
 """
 Two-Stage Triage Pipeline:
-1. Emergency Rules: Check for safety-critical symptoms (100% reliable)
-2. SapBERT: Patient text → DDXPlus evidence codes
-3. XGBoost: Evidence codes → Specialty
-
-IMPORTANT: Only rule-based emergency detection routes to emergency.
-ML predictions of "emergency" are downgraded to the next best specialty.
+1. Symptom Normalization: Patient language → Medical terms (rule-based)
+2. Emergency Rules: Check for safety-critical symptoms (100% reliable)
+3. SapBERT: Normalized text → DDXPlus evidence codes
+4. XGBoost: Evidence codes → Specialty
 """
 
 import pickle
@@ -16,12 +14,13 @@ import structlog
 
 from app.core.sapbert_linker import SapBERTLinker, get_sapbert_linker
 from app.core.emergency_detector import check_emergency_keywords
+from app.core.symptom_normalizer import normalize_symptoms
 
 logger = structlog.get_logger(__name__)
 
 
 class TriagePipelineV2:
-    """Three-stage pipeline: Emergency rules + SapBERT linking + XGBoost classification."""
+    """Four-stage pipeline: Normalize + Emergency rules + SapBERT + XGBoost."""
 
     def __init__(self) -> None:
         self.sapbert: Optional[SapBERTLinker] = None
@@ -29,6 +28,7 @@ class TriagePipelineV2:
         self.code_to_idx: Dict[str, int] = {}
         self.idx_to_specialty: Dict[int, str] = {}
         self._loaded = False
+        self.emergency_idx: Optional[int] = None
 
     def load(
         self,
@@ -55,8 +55,6 @@ class TriagePipelineV2:
         self.code_to_idx = vocab["code_to_idx"]
         self.idx_to_specialty = vocab["idx_to_specialty"]
         
-        # Find emergency index for filtering
-        self.emergency_idx = None
         for idx, name in self.idx_to_specialty.items():
             if name == "emergency":
                 self.emergency_idx = idx
@@ -73,13 +71,13 @@ class TriagePipelineV2:
         self._loaded = False
         logger.info("pipeline_unloaded")
 
-    def _symptoms_to_feature_vector(self, symptoms: List[str], threshold: float = 0.4) -> Tuple[np.ndarray, set]:
+    def _symptoms_to_feature_vector(self, symptoms: List[str], threshold: float = 0.3) -> Tuple[np.ndarray, set]:
         """Convert patient symptoms to evidence code feature vector."""
         matches = self.sapbert.link_symptoms(symptoms, top_k=3, threshold=threshold)
 
         features = np.zeros(225, dtype=np.float32)
-
         matched_codes = set()
+        
         for symptom, code, score in matches:
             if code in self.code_to_idx:
                 idx = self.code_to_idx[code]
@@ -87,29 +85,23 @@ class TriagePipelineV2:
                 matched_codes.add(code)
 
         logger.info("symptoms_vectorized", input_symptoms=len(symptoms), matched_codes=len(matched_codes))
-
         return features, matched_codes
 
     def predict(
         self,
         symptoms: List[str],
-        threshold: float = 0.4,
+        threshold: float = 0.3,
     ) -> Dict:
-        """
-        Predict specialty from patient symptoms.
-
-        Args:
-            symptoms: List of symptom strings (patient language)
-            threshold: SapBERT similarity threshold
-
-        Returns:
-            Dict with specialty, confidence, matched codes, reasoning, emergency info
-        """
+        """Predict specialty from patient symptoms."""
         if not self._loaded:
             raise RuntimeError("Pipeline not loaded")
 
-        # Stage 0: Emergency detection (rule-based, always first)
-        emergency_result = check_emergency_keywords(symptoms)
+        # Stage 0: Normalize symptoms (patient language → medical terms)
+        normalized = normalize_symptoms(symptoms)
+        logger.info("symptoms_normalized", original=symptoms, normalized=normalized)
+
+        # Stage 1: Emergency detection (rule-based)
+        emergency_result = check_emergency_keywords(symptoms)  # Check original text
         
         if emergency_result["is_emergency"]:
             return {
@@ -121,8 +113,8 @@ class TriagePipelineV2:
                 "route": "EMERGENCY_OVERRIDE",
             }
 
-        # Stage 1: SapBERT linking
-        features, matched_codes = self._symptoms_to_feature_vector(symptoms, threshold)
+        # Stage 2: SapBERT linking (on normalized text)
+        features, matched_codes = self._symptoms_to_feature_vector(normalized, threshold)
 
         if not matched_codes:
             return {
@@ -134,16 +126,13 @@ class TriagePipelineV2:
                 "route": "DEFAULT_FALLBACK",
             }
 
-        # Stage 2: XGBoost prediction
+        # Stage 3: XGBoost prediction
         features_2d = features.reshape(1, -1)
         proba = self.xgboost_model.predict_proba(features_2d)[0]
 
-        # IMPORTANT: If ML predicts emergency but rules didn't, use 2nd best
-        # Only rule-based detection should route to emergency
+        # Filter out ML emergency predictions
         top_idx = np.argmax(proba)
-        
         if top_idx == self.emergency_idx:
-            # Zero out emergency and get next best
             proba_filtered = proba.copy()
             proba_filtered[self.emergency_idx] = 0
             top_idx = np.argmax(proba_filtered)
@@ -152,12 +141,11 @@ class TriagePipelineV2:
         specialty = self.idx_to_specialty[top_idx]
         confidence = float(proba[top_idx])
 
-        # Get top 3 for reasoning (excluding emergency if it was filtered)
         top_3_idx = np.argsort(proba)[-3:][::-1]
         reasoning = [
             f"{self.idx_to_specialty[i]}: {proba[i]:.1%}"
             for i in top_3_idx
-            if i != self.emergency_idx or emergency_result["is_emergency"]
+            if i != self.emergency_idx
         ][:3]
 
         return {
