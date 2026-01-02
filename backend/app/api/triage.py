@@ -87,9 +87,9 @@ async def triage(request: TriageRequest) -> TriageResponse:
             DifferentialDiagnosis(
                 condition=d["condition"],
                 probability=d["probability"],
-                rank=d["rank"],
+                rank=i + 1,
             )
-            for d in result.get("differential_diagnosis", [])
+            for i, d in enumerate(result.get("differential_diagnosis", []))
         ]
         
         explanation = None

@@ -42,7 +42,7 @@ class ExplanationGenerator:
     def __init__(
         self,
         base_url: str = "http://localhost:11434",
-        model: str = "mistral:7b",
+        model: str = "llama3.1:8b",
         timeout: float = 60.0,
     ):
         self.base_url = base_url
