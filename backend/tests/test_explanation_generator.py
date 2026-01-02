@@ -36,7 +36,7 @@ class TestExplanationGenerator:
         return ExplanationGenerator()
 
     def test_init_defaults(self, generator):
-        assert generator.model == "mistral:7b"
+        assert generator.model == "llama3.1:8b"
         assert generator.base_url == "http://localhost:11434"
 
     def test_build_prompt(self, generator):
