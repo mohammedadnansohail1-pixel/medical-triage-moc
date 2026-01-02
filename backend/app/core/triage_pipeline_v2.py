@@ -1,7 +1,8 @@
 """
 Two-Stage Triage Pipeline:
-1. SapBERT: Patient text → DDXPlus evidence codes
-2. XGBoost: Evidence codes → Specialty (99% accuracy)
+1. Emergency Rules: Check for safety-critical symptoms (100% reliable)
+2. SapBERT: Patient text → DDXPlus evidence codes
+3. XGBoost: Evidence codes → Specialty (99% accuracy)
 """
 
 import pickle
@@ -11,12 +12,13 @@ import numpy as np
 import structlog
 
 from app.core.sapbert_linker import SapBERTLinker, get_sapbert_linker
+from app.core.emergency_detector import check_emergency_keywords
 
 logger = structlog.get_logger(__name__)
 
 
 class TriagePipelineV2:
-    """Two-stage pipeline: SapBERT linking + XGBoost classification."""
+    """Three-stage pipeline: Emergency rules + SapBERT linking + XGBoost classification."""
 
     def __init__(self) -> None:
         self.sapbert: Optional[SapBERTLinker] = None
@@ -70,10 +72,8 @@ class TriagePipelineV2:
 
     def _symptoms_to_feature_vector(self, symptoms: List[str], threshold: float = 0.4) -> Tuple[np.ndarray, set]:
         """Convert patient symptoms to evidence code feature vector."""
-        # Link symptoms to evidence codes via SapBERT
         matches = self.sapbert.link_symptoms(symptoms, top_k=3, threshold=threshold)
 
-        # XGBoost expects 225 features
         features = np.zeros(225, dtype=np.float32)
 
         matched_codes = set()
@@ -104,10 +104,23 @@ class TriagePipelineV2:
             threshold: SapBERT similarity threshold
 
         Returns:
-            Dict with specialty, confidence, matched codes, reasoning
+            Dict with specialty, confidence, matched codes, reasoning, emergency info
         """
         if not self._loaded:
             raise RuntimeError("Pipeline not loaded")
+
+        # Stage 0: Emergency detection (rule-based, always first)
+        emergency_result = check_emergency_keywords(symptoms)
+        
+        if emergency_result["is_emergency"]:
+            return {
+                "specialty": "emergency",
+                "confidence": 1.0,
+                "matched_codes": [],
+                "reasoning": [f"Emergency detected: {emergency_result['reason']}"],
+                "emergency": emergency_result,
+                "route": "EMERGENCY_OVERRIDE",
+            }
 
         # Stage 1: SapBERT linking
         features, matched_codes = self._symptoms_to_feature_vector(symptoms, threshold)
@@ -118,6 +131,8 @@ class TriagePipelineV2:
                 "confidence": 0.3,
                 "matched_codes": [],
                 "reasoning": ["No symptoms matched to known evidence codes"],
+                "emergency": emergency_result,
+                "route": "DEFAULT_FALLBACK",
             }
 
         # Stage 2: XGBoost prediction
@@ -140,6 +155,8 @@ class TriagePipelineV2:
             "confidence": confidence,
             "matched_codes": list(matched_codes),
             "reasoning": reasoning,
+            "emergency": emergency_result,
+            "route": "ML_CLASSIFICATION",
         }
 
 
