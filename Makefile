@@ -1,92 +1,86 @@
-.PHONY: setup start stop logs status clean health dev-backend dev-frontend
+.PHONY: setup install train run test clean help
 
-# ===================
-# MAIN COMMANDS
-# ===================
+# Variables
+PYTHON := python3
+VENV := backend/venv
+PIP := $(VENV)/bin/pip
+PYTHON_VENV := $(VENV)/bin/python
 
-# First-time setup
-setup:
-	@echo "🔧 Setting up Medical Triage MOC..."
-	@test -f .env || cp .env.example .env
-	docker compose pull
-	docker compose build
-	@echo "⬇️  Pulling Ollama model (this takes a few minutes)..."
-	docker compose up -d ollama
-	@sleep 15
-	docker exec triage-ollama ollama pull mistral:7b-instruct-q8_0
-	docker compose down
-	@echo "✅ Setup complete! Run 'make start' to begin."
+# Colors
+GREEN := \033[0;32m
+YELLOW := \033[1;33m
+NC := \033[0m
 
-# Start all services
-start:
-	@echo "🚀 Starting Medical Triage MOC..."
-	docker compose up -d
+help:
+	@echo "Medical Triage AI - Available Commands"
+	@echo "======================================="
+	@echo "  make setup     - Complete first-time setup (venv + deps + train)"
+	@echo "  make install   - Install dependencies only"
+	@echo "  make train     - Train ML models from scratch"
+	@echo "  make run       - Start the API server"
+	@echo "  make test      - Run tests"
+	@echo "  make evaluate  - Run evaluation metrics"
+	@echo "  make clean     - Remove generated files"
 	@echo ""
-	@echo "✅ Services starting..."
-	@echo "   Frontend: http://localhost:3000"
-	@echo "   Backend:  http://localhost:8000/docs"
-	@echo "   Neo4j:    http://localhost:7474"
+	@echo "Quick Start:"
+	@echo "  1. make setup"
+	@echo "  2. make run"
+	@echo "  3. Open http://localhost:8000/docs"
 
-# Stop all services (frees all resources)
-stop:
-	@echo "🛑 Stopping all services..."
-	docker compose down
-	@echo "✅ All resources freed"
+setup: venv install train
+	@echo "$(GREEN)Setup complete!$(NC)"
+	@echo "Run 'make run' to start the server"
 
-# ===================
-# MONITORING
-# ===================
+venv:
+	@echo "$(YELLOW)Creating virtual environment...$(NC)"
+	$(PYTHON) -m venv $(VENV)
 
-# View logs (all services)
-logs:
-	docker compose logs -f
+install: venv
+	@echo "$(YELLOW)Installing dependencies...$(NC)"
+	$(PIP) install --upgrade pip
+	$(PIP) install -r backend/requirements.txt
 
-# View specific service logs
-logs-backend:
-	docker compose logs -f backend
+train:
+	@echo "$(YELLOW)Training models...$(NC)"
+	cd backend && $(PYTHON_VENV) -m scripts.train_models
 
-logs-ollama:
-	docker compose logs -f ollama
+run:
+	@echo "$(YELLOW)Starting API server...$(NC)"
+	@echo "API docs: http://localhost:8000/docs"
+	cd backend && $(PYTHON_VENV) -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-# Check status and resource usage
-status:
-	@echo "📊 Service Status:"
-	@docker compose ps
-	@echo ""
-	@echo "📊 Resource Usage:"
-	@docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" 2>/dev/null || true
-
-# Health check
-health:
-	@echo "🏥 Health Check:"
-	@curl -sf http://localhost:8000/health 2>/dev/null && echo "Backend: ✅" || echo "Backend: ❌"
-	@curl -sf http://localhost:11434/api/tags >/dev/null 2>&1 && echo "Ollama:  ✅" || echo "Ollama:  ❌"
-	@curl -sf http://localhost:7474 >/dev/null 2>&1 && echo "Neo4j:   ✅" || echo "Neo4j:   ❌"
-	@curl -sf http://localhost:5432 >/dev/null 2>&1 || echo "Postgres: (check via psql)"
-
-# ===================
-# DEVELOPMENT
-# ===================
-
-# Run backend tests
 test:
-	cd backend && python -m pytest tests/ -v
+	@echo "$(YELLOW)Running tests...$(NC)"
+	cd backend && $(PYTHON_VENV) -m pytest tests/ -v
 
-# Format code
-format:
-	cd backend && python -m black app/ tests/
+evaluate:
+	@echo "$(YELLOW)Running evaluation...$(NC)"
+	cd backend && $(PYTHON_VENV) -c "\
+from pathlib import Path; \
+import sys; sys.path.insert(0, '.'); \
+from app.core.triage_pipeline_v2 import TriagePipelineV2; \
+p = TriagePipelineV2(); \
+p.load(Path('../data/ddxplus/release_evidences.json'), Path('data/classifier/model.pkl'), Path('data/classifier/vocabulary.pkl'), enable_explanations=False); \
+result = p.predict(['chest pain', 'shortness of breath']); \
+print('Test prediction:', result['specialty'], result['confidence']); \
+p.unload()"
 
-# Lint code
-lint:
-	cd backend && python -m ruff check app/ tests/
-
-# ===================
-# CLEANUP
-# ===================
-
-# Stop and remove volumes (DELETES DATA)
 clean:
-	@echo "⚠️  This will DELETE ALL DATA!"
-	@read -p "Are you sure? [y/N] " confirm && [ "$${confirm}" = "y" ] || exit 1
-	docker compose down -v
-	@echo "✅ Cleaned"
+	@echo "$(YELLOW)Cleaning generated files...$(NC)"
+	rm -rf backend/data/classifier/*.pkl
+	rm -rf backend/__pycache__
+	rm -rf backend/app/__pycache__
+	rm -rf backend/app/core/__pycache__
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	@echo "$(GREEN)Clean complete$(NC)"
+
+# Docker commands
+docker-build:
+	docker-compose build
+
+docker-up:
+	docker-compose up -d
+
+docker-down:
+	docker-compose down

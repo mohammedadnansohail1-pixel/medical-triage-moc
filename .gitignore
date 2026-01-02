@@ -98,3 +98,4 @@ secrets/
 tmp/
 temp/
 *.tmp
+*.zip
