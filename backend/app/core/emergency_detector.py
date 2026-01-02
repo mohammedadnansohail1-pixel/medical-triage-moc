@@ -108,3 +108,35 @@ def check_emergency_keywords(symptoms: List[str]) -> Dict:
     """
     combined_text = " ".join(symptoms)
     return detect_emergency(combined_text)
+
+# Additional emergency combinations
+EMERGENCY_COMBOS = [
+    ({"chest", "arm"}, "cardiac_emergency"),  # MI classic
+    ({"chest", "sweating"}, "cardiac_emergency"),
+    ({"face", "droop"}, "stroke"),
+    ({"weakness", "numbness"}, "stroke"),
+    ({"sudden", "weakness"}, "stroke"),
+]
+
+def check_emergency_combos(symptoms: List[str]) -> Dict:
+    """Check for emergency symptom combinations."""
+    text = " ".join(symptoms).lower()
+    for combo, reason in EMERGENCY_COMBOS:
+        if all(word in text for word in combo):
+            return {
+                "is_emergency": True,
+                "reason": reason,
+                "matched_text": str(combo),
+                "action": "ROUTE_TO_EMERGENCY",
+            }
+    return {"is_emergency": False, "reason": None, "matched_text": None, "action": "CONTINUE_ROUTING"}
+
+# Update main function
+_original_check = check_emergency_keywords
+def check_emergency_keywords(symptoms: List[str]) -> Dict:
+    # Try regex patterns first
+    result = _original_check.__wrapped__(symptoms) if hasattr(_original_check, '__wrapped__') else detect_emergency(" ".join(symptoms))
+    if result["is_emergency"]:
+        return result
+    # Try combinations
+    return check_emergency_combos(symptoms)
