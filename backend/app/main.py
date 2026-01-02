@@ -1,11 +1,10 @@
 """FastAPI application entry point."""
-
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from app.config import settings
 from app.api.routes import health, triage
+from app.api.routes import triage_v2
 
 # Configure structured logging
 structlog.configure(
@@ -21,13 +20,12 @@ structlog.configure(
     logger_factory=structlog.stdlib.LoggerFactory(),
     cache_logger_on_first_use=True,
 )
-
 logger = structlog.get_logger(__name__)
 
 app = FastAPI(
     title="Medical Triage AI",
     description="AI-powered medical triage routing system",
-    version="0.1.0",
+    version="0.2.0",
     debug=settings.debug,
 )
 
@@ -42,7 +40,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(health.router, tags=["Health"])
-app.include_router(triage.router, prefix="/api", tags=["Triage"])
+app.include_router(triage.router, prefix="/api", tags=["Triage V1"])
+app.include_router(triage_v2.router, prefix="/api", tags=["Triage V2"])
 
 
 @app.on_event("startup")
@@ -58,5 +57,8 @@ async def startup_event() -> None:
 
 @app.on_event("shutdown")
 async def shutdown_event() -> None:
-    """Log application shutdown."""
+    """Log application shutdown and cleanup."""
+    from app.core.triage_pipeline_v2 import get_triage_pipeline
+    pipeline = get_triage_pipeline()
+    pipeline.unload()
     logger.info("application_shutdown")
