@@ -11170,6 +11170,31 @@
           "E_99": 0.5421079979215796
         }
       }
+    },
+    "dermatology": {
+      "conditions": [
+        "Localized edema",
+        "Atopic dermatitis"
+      ],
+      "priors": {
+        "Localized edema": 0.5,
+        "Atopic dermatitis": 0.5
+      },
+      "symptom_probs": {
+        "Localized edema": {
+          "E_130": 0.8,
+          "E_129": 0.7,
+          "E_132": 0.6,
+          "E_134": 0.5,
+          "E_136": 0.4
+        },
+        "Atopic dermatitis": {
+          "E_130": 0.9,
+          "E_132": 0.85,
+          "E_129": 0.6,
+          "E_134": 0.5
+        }
+      }
     }
   },
   "symptoms": [

@@ -331,6 +331,43 @@ class TriagePipelineV2:
                 "explanation": None,
             }
 
+        # Stage 2.5: Rule-based specialty override (for DDXPlus data gaps)
+        rule_result = _apply_specialty_rules(symptoms, matched_codes)
+        if rule_result:
+            specialty, confidence = rule_result
+            # Get differential diagnosis for rule-matched specialty
+            differential_diagnosis = []
+            if include_ddx:
+                differential_diagnosis = self._get_differential_diagnosis(
+                    specialty=specialty,
+                    matched_codes=matched_codes,
+                    age=age,
+                    sex=sex,
+                    top_k=5,
+                )
+            
+            explanation = None
+            if include_explanation:
+                explanation = self._generate_explanation(
+                    symptoms=symptoms,
+                    specialty=specialty,
+                    confidence=confidence,
+                    differential_diagnosis=differential_diagnosis,
+                    age=age,
+                    sex=sex,
+                )
+            
+            return {
+                "specialty": specialty,
+                "confidence": confidence,
+                "matched_codes": list(matched_codes),
+                "reasoning": [f"Rule-based: {specialty} (keyword match)"],
+                "emergency": emergency_result,
+                "route": "RULE_OVERRIDE",
+                "differential_diagnosis": differential_diagnosis,
+                "explanation": explanation,
+            }
+
         # Stage 3: XGBoost prediction
         features_2d = features.reshape(1, -1)
         proba = self.xgboost_model.predict_proba(features_2d)[0]
