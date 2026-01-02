@@ -1,0 +1,30 @@
+{
+  "emergency_detection": {
+    "passed": 8,
+    "total": 8,
+    "sensitivity": 100.0
+  },
+  "routing_accuracy": {
+    "passed": 12,
+    "total": 12,
+    "accuracy": 100.0
+  },
+  "non_emergency_specificity": {
+    "passed": 5,
+    "total": 5,
+    "specificity": 100.0
+  },
+  "overall": {
+    "passed": 25,
+    "total": 25,
+    "accuracy": 100.0
+  },
+  "latency": {
+    "avg_ms": 749.2683240002953,
+    "min_ms": 1.1244930028624367,
+    "max_ms": 1270.5171470006462
+  },
+  "multi_turn": {
+    "coherent": true
+  }
+}

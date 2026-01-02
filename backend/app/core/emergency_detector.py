@@ -24,6 +24,9 @@ EMERGENCY_PATTERNS: List[Tuple[str, str]] = [
     (r"sudden.*(confusion|trouble.*understand)", "stroke"),
     (r"sudden.*(vision|blind|see)", "stroke"),
     (r"sudden.*severe.*headache", "stroke"),
+    (r"worst.*headache.*life", "stroke"),
+    (r"headache.*sudden.*severe", "stroke"),
+    (r"severe.*headache.*sudden", "stroke"),
     (r"\bstroke\b", "stroke"),
     (r"\btia\b|transient.*ischemic", "stroke"),
     
