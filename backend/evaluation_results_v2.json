@@ -1,0 +1,14 @@
+{
+  "accuracy": 0.742,
+  "macro_f1": 0.6050819712839483,
+  "weighted_f1": 0.7798229119551225,
+  "brier_score": 0.20167948312151857,
+  "ece": 0.181629171359539,
+  "emergency_sensitivity": 0.0,
+  "under_triage_rate": 0.042,
+  "routing": {
+    "ML_CLASSIFICATION": 412,
+    "RULE_BASED_FALLBACK": 74,
+    "EMERGENCY_OVERRIDE": 14
+  }
+}

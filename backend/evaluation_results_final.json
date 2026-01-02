@@ -1,0 +1,78 @@
+{
+  "evaluation_date": "2026-01-02 00:59:14",
+  "n_samples": 1000,
+  "runtime_seconds": 8.71,
+  "avg_latency_ms": 8.69,
+  "classification": {
+    "accuracy": 0.781,
+    "macro_f1": 0.6606,
+    "weighted_f1": 0.7763,
+    "macro_precision": 0.6683,
+    "macro_recall": 0.6557,
+    "per_class": {
+      "cardiology": {
+        "precision": 0.8679,
+        "recall": 0.965,
+        "f1": 0.9139,
+        "support": 143
+      },
+      "dermatology": {
+        "precision": 0.6667,
+        "recall": 0.5714,
+        "f1": 0.6154,
+        "support": 28
+      },
+      "emergency": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 40
+      },
+      "gastroenterology": {
+        "precision": 0.6076,
+        "recall": 0.5926,
+        "f1": 0.6,
+        "support": 81
+      },
+      "general_medicine": {
+        "precision": 0.8119,
+        "recall": 0.7785,
+        "f1": 0.7948,
+        "support": 316
+      },
+      "neurology": {
+        "precision": 0.9178,
+        "recall": 0.8272,
+        "f1": 0.8701,
+        "support": 81
+      },
+      "pulmonology": {
+        "precision": 0.8061,
+        "recall": 0.8553,
+        "f1": 0.83,
+        "support": 311
+      }
+    }
+  },
+  "calibration": {
+    "brier_score": 0.1893,
+    "ece": 0.1442,
+    "mce": 0.8985
+  },
+  "safety": {
+    "emergency_sensitivity": 0.0,
+    "emergency_specificity": 0.9667,
+    "under_triage_rate": 0.059,
+    "over_triage_rate": 0.091,
+    "triage_accuracy": 0.85,
+    "passes_threshold": {
+      "emergency_sensitivity": false,
+      "under_triage_rate": false,
+      "overall_safe": false
+    }
+  },
+  "routing": {
+    "ML_CLASSIFICATION": 968,
+    "EMERGENCY_OVERRIDE": 32
+  }
+}

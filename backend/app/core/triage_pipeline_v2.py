@@ -22,6 +22,77 @@ from app.core.explanation_generator import ExplanationGenerator, get_explanation
 
 logger = structlog.get_logger(__name__)
 
+# Rule-based specialty detection for cases where XGBoost training data is misaligned
+# These rules fire BEFORE XGBoost when symptom patterns strongly indicate a specialty
+SYMPTOM_SPECIALTY_RULES: Dict[str, Dict] = {
+    "dermatology": {
+        "keywords": ["rash", "skin rash", "itch", "itchy", "hives", "eczema", "acne", 
+                     "psoriasis", "dermatitis", "lesion", "blister", "skin irritation",
+                     "bumps on skin", "skin redness", "itchy skin", "skin problem"],
+        "evidence_codes": ["E_129", "E_130", "E_132", "E_134", "E_136"],
+        "min_keyword_matches": 1,  # Just keywords - dermatology has no good training data
+        "require_both": False,
+        "confidence": 0.85,
+    },
+    "gastroenterology": {
+        "keywords": ["stomach", "nausea", "vomit", "diarrhea", "constipation",
+                     "heartburn", "acid reflux", "bloating", "indigestion", "gastric",
+                     "abdominal pain", "belly"],
+        "evidence_codes": ["E_98", "E_97", "E_125", "E_173"],
+        "min_keyword_matches": 2,  # Need strong keyword signal
+        "require_both": True,  # Must have BOTH keywords AND codes
+        "confidence": 0.80,
+    },
+}
+
+
+def _apply_specialty_rules(
+    symptoms: List[str], matched_codes: set
+) -> Optional[Tuple[str, float]]:
+    """
+    Apply rule-based specialty detection BEFORE XGBoost.
+    
+    Returns (specialty, confidence) or None to fall through to XGBoost.
+    This fixes cases where DDXPlus training data doesn't align with
+    actual symptom-specialty relationships (e.g., dermatology).
+    """
+    symptoms_lower = [s.lower() for s in symptoms]
+    symptoms_text = " ".join(symptoms_lower)
+    
+    for specialty, rules in SYMPTOM_SPECIALTY_RULES.items():
+        # Count keyword matches (check if keyword appears in any symptom)
+        keyword_matches = sum(
+            1 for kw in rules["keywords"]
+            if kw in symptoms_text or any(kw in s for s in symptoms_lower)
+        )
+        
+        # Count evidence code matches
+        code_matches = sum(
+            1 for code in rules["evidence_codes"]
+            if code in matched_codes
+        )
+        
+        # Check if we meet the threshold
+        require_both = rules.get("require_both", False)
+        
+        if require_both:
+            # Must have BOTH sufficient keywords AND at least one code
+            matches = keyword_matches >= rules["min_keyword_matches"] and code_matches >= 1
+        else:
+            # Just need sufficient keywords (for specialties with bad training data)
+            matches = keyword_matches >= rules["min_keyword_matches"]
+        
+        if matches:
+            logger.info(
+                "specialty_rule_matched",
+                specialty=specialty,
+                keyword_matches=keyword_matches,
+                code_matches=code_matches,
+            )
+            return (specialty, rules["confidence"])
+    
+    return None
+
 
 class TriagePipelineV2:
     """Six-stage pipeline: Normalize + Emergency + SapBERT + XGBoost + SpecialtyAgent + LLM Explanation."""
