@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "total_tests": 62,
+    "total_passed": 60,
+    "overall_accuracy": 96.7741935483871,
+    "avg_latency_ms": 1740.2740743425156
+  },
+  "categories": {
+    "emergency_detection": {
+      "passed": 10,
+      "total": 10,
+      "accuracy": 100.0,
+      "avg_latency_ms": 1.7384052276611328
+    },
+    "non_emergency_specificity": {
+      "passed": 10,
+      "total": 10,
+      "accuracy": 100.0,
+      "avg_latency_ms": 1175.343132019043
+    },
+    "dermatology_agent": {
+      "passed": 5,
+      "total": 5,
+      "accuracy": 100.0,
+      "avg_latency_ms": 4434.806871414185
+    },
+    "cardiology_agent": {
+      "passed": 5,
+      "total": 5,
+      "accuracy": 100.0,
+      "avg_latency_ms": 3202.2826194763184
+    },
+    "component_emergency": {
+      "passed": 5,
+      "total": 6,
+      "accuracy": 83.33333333333334,
+      "avg_latency_ms": 0
+    },
+    "component_dermatology": {
+      "passed": 5,
+      "total": 5,
+      "accuracy": 100.0,
+      "avg_latency_ms": 0
+    },
+    "component_cardiology": {
+      "passed": 5,
+      "total": 5,
+      "accuracy": 100.0,
+      "avg_latency_ms": 0
+    },
+    "triage_pipeline": {
+      "passed": 8,
+      "total": 8,
+      "accuracy": 100.0,
+      "avg_latency_ms": 1770.8355784416199
+    },
+    "multiturn_conversation": {
+      "passed": 2,
+      "total": 2,
+      "accuracy": 100.0,
+      "avg_latency_ms": 4492.075085639954
+    },
+    "edge_cases": {
+      "passed": 5,
+      "total": 6,
+      "accuracy": 83.33333333333334,
+      "avg_latency_ms": 1041.0471439361572
+    }
+  },
+  "safety_check": {
+    "emergency_sensitivity": 100.0,
+    "non_emergency_specificity": 100.0,
+    "passed": true
+  }
+}

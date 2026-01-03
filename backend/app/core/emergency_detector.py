@@ -19,7 +19,11 @@ EMERGENCY_PATTERNS: List[Tuple[str, str]] = [
     (r"chest.*radiat.*(arm|jaw|back)", "cardiac_emergency"),
     
     # Stroke signs (FAST)
+    (r"face.*(droop|numb|weak)", "stroke"),
+    (r"can'?t\s*(lift|move)\s*(my\s*)?(arm|leg)", "stroke"),
+    (r"arm.*(weak|numb|can'?t\s*lift)", "stroke"),
     (r"(face|arm|leg).*(numb|weak|droop).*sudden", "stroke"),
+    (r"(face|arm|leg).*(droop|numb|weak)", "stroke"),
     (r"slur.*speech|speech.*slur|can'?t\s*speak", "stroke"),
     (r"sudden.*(confusion|trouble.*understand)", "stroke"),
     (r"sudden.*(vision|blind|see)", "stroke"),
@@ -29,6 +33,11 @@ EMERGENCY_PATTERNS: List[Tuple[str, str]] = [
     (r"severe.*headache.*sudden", "stroke"),
     (r"\bstroke\b", "stroke"),
     (r"\btia\b|transient.*ischemic", "stroke"),
+    
+    # Anaphylaxis - throat/tongue swelling
+    (r"throat.*(swell|clos|tight)", "anaphylaxis"),
+    (r"tongue.*(swell)", "anaphylaxis"),
+    (r"(ate|eat|eaten).*allerg.*(swell|breath)", "anaphylaxis"),
     
     # Breathing emergencies
     (r"(can'?t|cannot|unable).*breath", "respiratory_emergency"),

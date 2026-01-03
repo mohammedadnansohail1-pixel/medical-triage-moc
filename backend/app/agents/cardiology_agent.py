@@ -19,12 +19,16 @@ from .state import ConversationState, escalate_risk
 
 # Cardiac-related symptom keywords
 CARDIAC_KEYWORDS = [
-    "chest pain", "chest pressure", "chest tightness",
+    "chest pain", "chest pressure", "chest tightness", "chest discomfort",
     "heart", "palpitations", "racing heart", "irregular heartbeat",
-    "shortness of breath", "breathless", "can't breathe",
+    "shortness of breath", "breathless", "can't breathe", "out of breath",
     "dizzy", "lightheaded", "fainting", "passed out",
     "arm pain", "jaw pain", "sweating", "cold sweat",
     "fatigue", "tired", "exhausted", "weak",
+    # Heart failure symptoms
+    "swollen ankles", "ankle swelling", "leg swelling", "swollen legs",
+    "can't lie flat", "need pillows to sleep", "wake up breathless",
+    "fluid retention", "edema", "weight gain",
 ]
 
 
