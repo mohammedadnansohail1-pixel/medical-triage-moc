@@ -1,35 +1,46 @@
 # Medical Triage API - Production Dockerfile
-FROM python:3.12-slim
+# Supports: CPU-only, NVIDIA GPU, Apple Silicon
+
+FROM python:3.12-slim AS base
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
+    git \
+    libgl1 \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app user
 RUN useradd --create-home --shell /bin/bash app
+
 WORKDIR /app
 
-# Install Python dependencies
+# Copy requirements first for caching
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY app/ ./app/
 COPY data/ ./data/
 
-# Copy model files
-COPY data/classifier/ ./data/classifier/
+# Create directories for models (downloaded at runtime)
+RUN mkdir -p /app/models /app/cache && \
+    chown -R app:app /app
 
-# Change ownership
-RUN chown -R app:app /app
+# Set HuggingFace cache directory
+ENV HF_HOME=/app/cache \
+    TRANSFORMERS_CACHE=/app/cache
 
 # Switch to app user
 USER app
@@ -38,7 +49,7 @@ USER app
 EXPOSE 8000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=30s --start-period=120s --retries=3 \
     CMD curl -f http://localhost:8000/api/v1/health || exit 1
 
 # Run the application

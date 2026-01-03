@@ -1,43 +1,32 @@
-version: '3.8'
-
 services:
+  # =============================================================================
+  # Medical Triage API - Main Application
+  # =============================================================================
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: medical-triage-api
     ports:
       - "8000:8000"
     environment:
       - PYTHONPATH=/app
       - LOG_LEVEL=INFO
       - OLLAMA_URL=http://ollama:11434
+      - HF_HOME=/app/cache
+      - TRANSFORMERS_CACHE=/app/cache
     volumes:
       - ./data/ddxplus:/app/data/ddxplus:ro
+      - model-cache:/app/cache
     depends_on:
       ollama:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    restart: unless-stopped
-    networks:
-      - triage-network
-
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 180s
     restart: unless-stopped
     networks:
       - triage-network
@@ -49,9 +38,59 @@ services:
               count: 1
               capabilities: [gpu]
 
+  # =============================================================================
+  # Ollama - Local LLM Server (GPU)
+  # =============================================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: medical-triage-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 30s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - triage-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # =============================================================================
+  # Ollama Model Initializer - Downloads required models
+  # =============================================================================
+  ollama-init:
+    image: curlimages/curl:latest
+    container_name: medical-triage-ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+        echo 'Pulling llama3.1:8b model...' &&
+        curl -X POST http://ollama:11434/api/pull -d '{"name": "llama3.1:8b"}' &&
+        echo 'Model ready!'
+      "
+    networks:
+      - triage-network
+    restart: "no"
+
 volumes:
   ollama-data:
+    name: medical-triage-ollama-data
+  model-cache:
+    name: medical-triage-model-cache
 
 networks:
   triage-network:
     driver: bridge
+    name: medical-triage-network

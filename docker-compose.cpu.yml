@@ -1,26 +1,81 @@
-version: '3.8'
-
 services:
+  # =============================================================================
+  # CPU-ONLY Configuration
+  # Use: docker-compose -f docker-compose.cpu.yml up
+  # =============================================================================
+
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: medical-triage-api
     ports:
       - "8000:8000"
     environment:
       - PYTHONPATH=/app
       - LOG_LEVEL=INFO
-      - ENABLE_LLM=false
+      - OLLAMA_URL=http://ollama:11434
+      - HF_HOME=/app/cache
+      - TRANSFORMERS_CACHE=/app/cache
+      - CUDA_VISIBLE_DEVICES=""
     volumes:
       - ./data/ddxplus:/app/data/ddxplus:ro
+      - model-cache:/app/cache
+    depends_on:
+      ollama:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 180s
     restart: unless-stopped
+    networks:
+      - triage-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: medical-triage-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_NUM_GPU=0
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 30s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - triage-network
+
+  ollama-init:
+    image: curlimages/curl:latest
+    container_name: medical-triage-ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+        echo 'Pulling llama3.1:8b model (CPU)...' &&
+        curl -X POST http://ollama:11434/api/pull -d '{"name": "llama3.1:8b"}' &&
+        echo 'Model ready!'
+      "
+    networks:
+      - triage-network
+    restart: "no"
+
+volumes:
+  ollama-data:
+    name: medical-triage-ollama-data
+  model-cache:
+    name: medical-triage-model-cache
 
 networks:
-  default:
+  triage-network:
     driver: bridge
+    name: medical-triage-network
