@@ -1,5 +1,21 @@
 services:
   # =============================================================================
+  # Frontend - React UI
+  # =============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: medical-triage-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - triage-network
+
+  # =============================================================================
   # Medical Triage API - Main Application
   # =============================================================================
   api:
@@ -66,7 +82,7 @@ services:
               capabilities: [gpu]
 
   # =============================================================================
-  # Ollama Model Initializer - Downloads required models
+  # Ollama Model Initializer
   # =============================================================================
   ollama-init:
     image: curlimages/curl:latest
